@@ -10,7 +10,7 @@ class FrozenLakeEnv:
         self.grid_size = grid_size
         self.hole_fraction = hole_fraction
         self.use_default_map = use_default_map  
-        self.actions = {'L': (0, -1), 'R': (0, 1), 'U': (-1, 0), 'D': (1, 0)}
+        self.actions = {0: 'UP', 1: 'DOWN', 2: 'RIGHT', 3: 'LEFT'}
         self.map = self.generate_map()
         self.state = self.find_start_position()
         self.goal = self.find_goal_position()
