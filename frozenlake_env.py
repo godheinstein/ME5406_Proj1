@@ -1,8 +1,10 @@
 import os
 import random
 import numpy as np
-import pygame
+import matplotlib.pyplot as plt
 from collections import defaultdict, deque
+from PIL import Image
+
 
 
 class FrozenLakeEnv:
@@ -21,22 +23,20 @@ class FrozenLakeEnv:
         self.store_path = True
         self.longest = 0
         self.shortest = 0
-        self.window_size = 400
-        self.cell_size = self.window_size // grid_size
-        pygame.init()
-        self.window = pygame.display.set_mode((self.window_size, self.window_size))
-        pygame.display.set_caption('Frozen Lake')
 
         images_folder = os.path.join(os.path.dirname(__file__), 'images')
-        self.robot_img = pygame.image.load(os.path.join(images_folder, 'robot.png'))
-        self.goal_img = pygame.image.load(os.path.join(images_folder, 'frisbee.png'))
-        self.hole_img = pygame.image.load(os.path.join(images_folder, 'hole.png'))
-        self.bg_img = pygame.image.load(os.path.join(images_folder, 'lake.png'))
+        self.robot_img = Image.open(os.path.join(images_folder, 'robot.png'))
+        self.goal_img = Image.open(os.path.join(images_folder, 'frisbee.png'))
+        self.hole_img = Image.open(os.path.join(images_folder, 'hole.png'))
+        self.bg_img = Image.open(os.path.join(images_folder, 'lake.png'))
 
-        self.robot_img = pygame.transform.scale(self.robot_img, (self.cell_size, self.cell_size))
-        self.hole_img = pygame.transform.scale(self.hole_img, (self.cell_size, self.cell_size))
-        self.goal_img = pygame.transform.scale(self.goal_img, (self.cell_size, self.cell_size))
-        self.bg_img = pygame.transform.scale(self.bg_img, (self.window_size, self.window_size))
+        self.cell_size = 50  
+        self.window_size = self.grid_size * self.cell_size  
+
+        self.robot_img = self.robot_img.resize((self.cell_size, self.cell_size))
+        self.hole_img = self.hole_img.resize((self.cell_size, self.cell_size))
+        self.goal_img = self.goal_img.resize((self.cell_size, self.cell_size))
+        self.bg_img = self.bg_img.resize((self.window_size, self.window_size))
         
     def generate_map(self):
         if self.use_default_map:
@@ -125,21 +125,22 @@ class FrozenLakeEnv:
         return self.position_transition(*self.state)
 
     def step(self, action):
-        move = {
+        # Define the movement for each action
+        movement = {
             0: (-1, 0),  # UP
             1: (1, 0),   # DOWN
             2: (0, 1),   # RIGHT
             3: (0, -1)   # LEFT
-        }.get(action, (0, 0))
-
-        new_state = (
-            max(0, min(self.grid_size - 1, self.state[0] + move[0])),
-            max(0, min(self.grid_size - 1, self.state[1] + move[1]))
-        )
-
-        self.path_dir[self.i] = new_state
-        self.i += 1
-
+        }
+        
+        # Calculate the new state
+        new_state = (self.state[0] + movement[action][0], self.state[1] + movement[action][1])
+        
+        # Check if the new state is out of bounds
+        if new_state[0] < 0 or new_state[0] >= self.grid_size or new_state[1] < 0 or new_state[1] >= self.grid_size:
+            new_state = self.state  # Stay in the same state if out of bounds
+        
+        # Check if the new state is a hole or the goal
         if new_state in self.holes:
             reward = -1
             done = True
@@ -160,34 +161,74 @@ class FrozenLakeEnv:
         else:
             reward = 0
             done = False
-
+        
         self.state = new_state
         state_index = self.position_transition(*new_state)
+        
+        # Render the environment
+        self.render()
+        
         return state_index, reward, done
 
 
     def render(self):
-        self.window.blit(self.bg_img, (0, 0))
-        for i in range(self.grid_size):
-            for j in range(self.grid_size):
-                pos = (j * self.cell_size, i * self.cell_size)
-                if (i, j) in self.holes:
-                    self.window.blit(self.hole_img, pos)
-                elif (i, j) == self.goal:
-                    self.window.blit(self.goal_img, pos)
-                elif (i, j) == self.state:
-                    self.window.blit(self.robot_img, pos)
-        pygame.display.update()
-
-    def final(self): 
+        # Create a blank canvas
+        canvas = Image.new('RGB', (self.window_size, self.window_size))
+        
+        # Draw the background
+        canvas.paste(self.bg_img, (0, 0))
+        
+        # Draw the holes
+        for hole in self.holes:
+            x, y = hole
+            canvas.paste(self.hole_img, (y * self.cell_size, x * self.cell_size))
+        
+        # Draw the goal
+        goal_x, goal_y = self.goal
+        canvas.paste(self.goal_img, (goal_y * self.cell_size, goal_x * self.cell_size))
+        
+        # Draw the robot
+        robot_x, robot_y = self.state
+        canvas.paste(self.robot_img, (robot_y * self.cell_size, robot_x * self.cell_size))
+        
+        # Display the canvas
+        plt.imshow(canvas)
+        plt.axis('off')
+        plt.show()
+ 
+    def final(self):
         print('shortest path:', self.shortest)
         print('longest path:', self.longest)
         print('the shortest route is shown in red')
 
-        for j in range(len(self.path_store_dir)):
-            pos = self.path_store_dir[j]
+        # Create a blank canvas
+        canvas = Image.new('RGB', (self.window_size, self.window_size))
+        
+        # Draw the background
+        canvas.paste(self.bg_img, (0, 0))
+        
+        # Draw the holes
+        for hole in self.holes:
+            x, y = hole
+            canvas.paste(self.hole_img, (y * self.cell_size, x * self.cell_size))
+        
+        # Draw the goal
+        goal_x, goal_y = self.goal
+        canvas.paste(self.goal_img, (goal_y * self.cell_size, goal_x * self.cell_size))
+        
+        # Draw the robot
+        robot_x, robot_y = self.state
+        canvas.paste(self.robot_img, (robot_y * self.cell_size, robot_x * self.cell_size))
+        
+        # Draw the shortest path
+        draw = ImageDraw.Draw(canvas)
+        for pos in self.path_store_dir.values():
             x = pos[1] * self.cell_size + self.cell_size // 2
             y = pos[0] * self.cell_size + self.cell_size // 2
-            pygame.draw.circle(self.window, (255, 0, 0), (x, y), 5)
-        pygame.display.update()
+            draw.ellipse((x-5, y-5, x+5, y+5), fill=(255, 0, 0))
+        
+        # Display the canvas
+        plt.imshow(canvas)
+        plt.axis('off')
+        plt.show()
 
