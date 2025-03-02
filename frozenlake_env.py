@@ -3,8 +3,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict, deque
-from PIL import Image
-
+from PIL import Image, ImageDraw
 
 
 class FrozenLakeEnv:
@@ -47,16 +46,16 @@ class FrozenLakeEnv:
                                 [1, 0, 0, 3]])
             elif self.grid_size == 10:
                 return np.array([
-                        [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 1, 0, 0, 1, 0, 0],
-                        [0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-                        [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
-                        [0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-                        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
+                                [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                [0, 1, 0, 0, 1, 0, 0, 1, 0, 0],
+                                [0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                                [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+                                [0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+                                [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                                [0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
                     ])
             else: 
                 raise ValueError('Default map only available for 4x4 and 10x10 grids.')
@@ -105,7 +104,6 @@ class FrozenLakeEnv:
 
     # extract the positions of holes from the map
     def find_holes(self):
-        
         holes = set()
         for i in range(self.grid_size):
             for j in range(self.grid_size):
@@ -114,18 +112,17 @@ class FrozenLakeEnv:
         return holes
     # convert (row, col) tuple to an integer index
     def position_transition(self, row, col):
-        
         return row * self.grid_size + col
+    
     # reset the environment and return the initial state
     def reset(self):
-        
         self.state = (0, 0)
         self.path_dir = {}
         self.i = 0
         return self.position_transition(*self.state)
 
-    def step(self, action):
-        # Define the movement for each action
+    # Define the movement for each action
+    def step(self, action): 
         movement = {
             0: (-1, 0),  # UP
             1: (1, 0),   # DOWN
@@ -163,11 +160,10 @@ class FrozenLakeEnv:
             done = False
         
         self.state = new_state
+        self.path_dir[self.i] = new_state
+        self.i += 1
         state_index = self.position_transition(*new_state)
-        
-        # Render the environment
-        self.render()
-        
+
         return state_index, reward, done
 
 
@@ -201,10 +197,7 @@ class FrozenLakeEnv:
         print('longest path:', self.longest)
         print('the shortest route is shown in red')
 
-        # Create a blank canvas
         canvas = Image.new('RGB', (self.window_size, self.window_size))
-        
-        # Draw the background
         canvas.paste(self.bg_img, (0, 0))
         
         # Draw the holes
