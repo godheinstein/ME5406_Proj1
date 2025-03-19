@@ -79,7 +79,7 @@ class FrozenLakeEnv:
             # check if path valid
             if self.is_path_available(map):
                 return map
-    
+    # created a breath-first search to check if there is a path from start to goal
     def is_path_available(self, map):
         start = (0,0)
         goal = (self.grid_size - 1, self.grid_size - 1)
